@@ -11,6 +11,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import org.firstinspires.ftc.robotcore.internal.system.Deadline;
+
+import java.util.concurrent.TimeUnit;
+
 @TeleOp
 public class MainTele extends OpMode {
     DcMotor rightFront;
@@ -22,7 +26,7 @@ public class MainTele extends OpMode {
     CRServo rightServo;
     CRServo leftServo;
 
-    final int READ_PERIOD = 30;
+   // final int READ_PERIOD = 1;
 
     HuskyLens huskyLens;
 
@@ -117,6 +121,7 @@ public class MainTele extends OpMode {
         }
 
         // huskylens
+
         huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
         int idealWidth = 60;
         int about = 5;
@@ -134,8 +139,12 @@ public class MainTele extends OpMode {
             if (block.id == 1) {
                 telemetry.addData("Width", block.width);
                 telemetry.update();
-                if (gamepad1.a){
-                    if (block.width < idealWidth - about){
+                boolean x = false;
+                if (gamepad1.aWasPressed()) {
+                    x = !x;
+                }
+                    if (x == true){
+                        if (block.width < idealWidth - about){
                         telemetry.addData("Position:", "NOT ready");
                         leftFront.setPower(0.8);
                         rightFront.setPower(0.8);
@@ -155,6 +164,7 @@ public class MainTele extends OpMode {
                         rightBack.setPower(0.8);
                     } else {
                         telemetry.addData("Position:", "ready");
+                        x = false;
                     }
                 }
             }
