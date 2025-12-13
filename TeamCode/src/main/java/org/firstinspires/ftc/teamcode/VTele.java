@@ -10,7 +10,7 @@ import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 @TeleOp
-public class MainTele extends OpMode {
+public class VTele extends OpMode {
     DcMotor rightFront;
     DcMotor rightBack;
     DcMotor leftFront;
@@ -48,40 +48,49 @@ public class MainTele extends OpMode {
     }
 
 
-    boolean x = false;
-   // double targetVelocity = 1800;
+   // boolean x = false;
+    double targetVelocity = 0;
+    boolean shootOn = false;
 
     public void loop() {
 
         // shooter/flywheel
         drivetrain();
 
-        telemetry.addData("Shooter Power:", shooter.getPower());
+        if (gamepad2.yWasPressed()) shootOn = !shootOn;
 
-
-        if (gamepad2.yWasPressed()) {
-            shooter.setPower(0.9);
-        } else if (gamepad2.aWasPressed()) {
-            shooter.setPower(0);
-        }
-
-
-        if (gamepad2.b) {
-            rightServo.setPower(1);
-            leftServo.setPower(-1);
-        } else if (gamepad2.x) {
-            rightServo.setPower(-1);
-            leftServo.setPower(1);
+        shooter.setVelocity(targetVelocity);
+        if (shootOn) {
+            targetVelocity = 1800;
+            if (Math.abs(shooter.getVelocity() - targetVelocity) < 10) {
+                if (gamepad2.x) {
+                    rightServo.setPower(1);
+                    leftServo.setPower(-1);
+                } else {
+                    rightServo.setPower(0);
+                    leftServo.setPower(0);
+                }
+            } else {
+                rightServo.setPower(0);
+                leftServo.setPower(0);
+            }
         } else {
-            rightServo.setPower(0);
-            leftServo.setPower(0);
+            targetVelocity = 0;
+            if (gamepad2.b) {
+                rightServo.setPower(-1);
+                leftServo.setPower(1);
+            } else if (gamepad2.x) {
+                rightServo.setPower(1);
+                leftServo.setPower(-1);
+            } else {
+                rightServo.setPower(0);
+                leftServo.setPower(0);
+            }
         }
 
-        if (gamepad2.dpadUpWasPressed()) {
-            shooter.setPower(shooter.getPower() + 0.05);
-        } else if (gamepad2.dpadDownWasPressed()) {
-            shooter.setPower(shooter.getPower() - 0.05);
-        }
+        telemetry.addData("Shooter Power:", shooter.getPower());
+        telemetry.addData("Current Velocity", shooter.getVelocity());
+        telemetry.update();
     }
 
     public void drivetrain() {
