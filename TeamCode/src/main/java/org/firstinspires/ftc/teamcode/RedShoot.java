@@ -50,7 +50,7 @@ public class RedShoot extends LinearOpMode {
         leftBack.setPower(0);
 
         // moving forward
-        while (opModeIsActive() && (runtime.seconds() < 8.5)) {
+        while (opModeIsActive() && (runtime.seconds() < 9)) {
             shooter.setPower(0.8);
             if (runtime.seconds() > 1 && runtime.seconds() < 1.8) {
                 rightFront.setPower(-0.5);
@@ -68,7 +68,7 @@ public class RedShoot extends LinearOpMode {
 
                 rightServo.setPower(1);
                 leftServo.setPower(-1);
-            } else if (runtime.seconds() > 6 && runtime.seconds() < 8.5) {
+            } else if (runtime.seconds() > 6 && runtime.seconds() < 9) {
                 rightFront.setPower(0.5);
                 leftFront.setPower(-0.5);
                 rightBack.setPower(-0.5);

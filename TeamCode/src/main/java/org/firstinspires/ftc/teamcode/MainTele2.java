@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import static java.lang.Thread.sleep;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -8,18 +10,20 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
+//add backroll to shooter
 @TeleOp
-public class MainTele extends OpMode {
-    DcMotor rightFront;
-    DcMotor rightBack;
-    DcMotor leftFront;
-    DcMotor leftBack;
-    DcMotorEx shooter;
-    CRServo rightServo;
-    CRServo leftServo;
-
-    // final int READ_PERIOD = 1;
+public class MainTele2 extends OpMode {
+    private DcMotor rightFront;
+    private DcMotor rightBack;
+    private DcMotor leftFront;
+    private DcMotor leftBack;
+    private DcMotor intake;
+    private DcMotorEx shooter;
+    private Servo pusher;
+    private DcMotor middle;
 
     HuskyLens huskyLens;
 
@@ -30,16 +34,21 @@ public class MainTele extends OpMode {
         leftFront = hardwareMap.get(DcMotor.class, "leftFront");
         leftBack = hardwareMap.get(DcMotor.class, "leftBack");
 
+
         shooter = (DcMotorEx) hardwareMap.get(DcMotor.class, "shooter");
-
-        rightServo = hardwareMap.get(CRServo.class, "rightServo");
-        leftServo = hardwareMap.get(CRServo.class, "leftServo");
-
-        huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        middle = hardwareMap.get(DcMotor.class, "middle");
+        pusher = hardwareMap.get(Servo.class, "pusher");
 
 
-        leftFront.setDirection(DcMotor.Direction.REVERSE);
+       // huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
+
+
+        leftFront.setDirection(DcMotor.Direction.FORWARD);
         leftBack.setDirection(DcMotor.Direction.REVERSE);
+
+        shooter.setDirection(DcMotor.Direction.REVERSE);
+        middle.setDirection(DcMotor.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -47,50 +56,76 @@ public class MainTele extends OpMode {
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
-
-    boolean x = false;
-    // double targetVelocity = 1800;
-
     public void loop() {
-
-        // shooter/flywheel
         drivetrain();
+        allintake();
+        try {
+            allshoot();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
+        //shooter data
         telemetry.addData("Shooter Power:", shooter.getPower());
 
-
-        //shooter speed
-        if (gamepad2.yWasPressed()) {
-            shooter.setPower(0.9);
-        } else if (gamepad2.aWasPressed()) {
-            shooter.setPower(0);
+        //shooter back
+        if (gamepad2.x) {
+            middle.setDirection(DcMotor.Direction.REVERSE);
+            middle.setPower(1);
+        } else if (gamepad2.b){
+            middle.setDirection(DcMotor.Direction.FORWARD);
+            middle.setPower(1);
         }
 
-
-        //servos
+      /*
+       //pusher
         if (gamepad2.b) {
-            rightServo.setPower(1);
-            leftServo.setPower(-1);
-        } else if (gamepad2.x) {
-            rightServo.setPower(-1);
-            leftServo.setPower(1);
+            pusher.setPosition(1);
         } else {
-            rightServo.setPower(0);
-            leftServo.setPower(0);
+            pusher.setPosition(0);
         }
-
-        if (gamepad2.dpadUpWasPressed()) {
-            shooter.setPower(shooter.getPower() + 0.05);
-        } else if (gamepad2.dpadDownWasPressed()) {
-            shooter.setPower(shooter.getPower() - 0.05);
-        }
+        */
 
         telemetry.update();
     }
 
+    public void allshoot() throws InterruptedException {
+        if (gamepad2.a){
+            shooter.setPower(1);
+            sleep(2000);
+
+          //  middle.setDirection(DcMotor.Direction.FORWARD);
+            // middle.setPower(1); //need to adjust speed
+            intake.setPower(1);
+        } else if (gamepad2.dpad_up){
+            shooter.setPower(shooter.getPower() + 0.05);
+        } else if (gamepad2.dpad_down) {
+            shooter.setPower(shooter.getPower() - 0.05);
+        } else {
+         //   middle.setPower(0);
+            shooter.setPower(0);
+            intake.setPower(0);
+        }
+
+        telemetry.update();
+
+    }
+
+    public void allintake() {
+        if (gamepad2.right_bumper){
+            intake.setPower(1);
+            //middle.setPower(1);
+        } else {
+            intake.setPower(0);
+           // middle.setPower(0);
+        }
+
+    }
+
+
     public void drivetrain() {
         //Drivetrain
-        double moveX = -gamepad1.left_stick_x;
+        double moveX = gamepad1.left_stick_x;
         double moveY = -gamepad1.left_stick_y;
         double turnX = gamepad1.right_stick_x;
 
@@ -99,17 +134,17 @@ public class MainTele extends OpMode {
         double backLeftPower = moveY - moveX + turnX;
         double backRightPower = moveY + moveX - turnX;
 
-//        frontLeftPower *= 0.98;
-//        backLeftPower *= 0.98;
+        frontLeftPower *= 0.98;
+        backLeftPower *= 0.98;
 
         //Drivetrain Driver Controls
         if (Math.abs(gamepad1.left_stick_x) > 0.1 || Math.abs(gamepad1.left_stick_y) > 0.1 || Math.abs(gamepad1.right_stick_x) > 0.1) {
 
             if (gamepad1.right_bumper) {
-                leftFront.setPower(frontLeftPower * 0.8);
-                rightFront.setPower(frontRightPower * 0.8);
-                leftBack.setPower(backLeftPower * 0.8);
-                rightBack.setPower(backRightPower * 0.8);
+                leftFront.setPower(frontLeftPower);
+                rightFront.setPower(frontRightPower);
+                leftBack.setPower(backLeftPower);
+                rightBack.setPower(backRightPower);
                 telemetry.addLine("drive multiplier: 1");
             } else if (gamepad1.left_bumper) {
                 leftFront.setPower(frontLeftPower * 0.35);
@@ -118,11 +153,12 @@ public class MainTele extends OpMode {
                 rightBack.setPower(backRightPower * 0.35);
                 telemetry.addLine("drive multiplier: 0.35");
             } else {
-                leftFront.setPower(frontLeftPower);
-                rightFront.setPower(frontRightPower);
-                leftBack.setPower(backLeftPower);
-                rightBack.setPower(backRightPower);
+                leftFront.setPower(frontLeftPower * 0.8);
+                rightFront.setPower(frontRightPower * 0.8);
+                leftBack.setPower(backLeftPower * 0.8);
+                rightBack.setPower(backRightPower * 0.8);
                 telemetry.addLine("drive multiplier: 0.8");
+
             }
         } else {
             leftFront.setPower(0);
