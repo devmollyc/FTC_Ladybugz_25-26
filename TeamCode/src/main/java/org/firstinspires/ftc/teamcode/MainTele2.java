@@ -22,32 +22,33 @@ public class MainTele2 extends OpMode {
     private DcMotor leftBack;
     private DcMotor intake;
     private DcMotorEx shooter;
-    private Servo pusher;
+    private double ticksPerRev;
+    // private Servo pusher;
     private DcMotor middle;
 
-    HuskyLens huskyLens;
 
 
     public void init() {
+        //drivetrain init
         rightFront = hardwareMap.get(DcMotor.class, "rightFront");
         rightBack = hardwareMap.get(DcMotor.class, "rightBack");
         leftFront = hardwareMap.get(DcMotor.class, "leftFront");
         leftBack = hardwareMap.get(DcMotor.class, "leftBack");
 
-
+        //shooter init
         shooter = (DcMotorEx) hardwareMap.get(DcMotor.class, "shooter");
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        ticksPerRev = shooter.getMotorType().getTicksPerRev();
+
+
         intake = hardwareMap.get(DcMotor.class, "intake");
         middle = hardwareMap.get(DcMotor.class, "middle");
-        pusher = hardwareMap.get(Servo.class, "pusher");
+       // pusher = hardwareMap.get(Servo.class, "pusher");
 
-
-       // huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
-
-
-        leftFront.setDirection(DcMotor.Direction.FORWARD);
+      0.  leftFront.setDirection(DcMotor.Direction.FORWARD);
         leftBack.setDirection(DcMotor.Direction.REVERSE);
 
-        shooter.setDirection(DcMotor.Direction.REVERSE);
+        shooter.setDirection(DcMotor.Direction.FORWARD);
         middle.setDirection(DcMotor.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -67,14 +68,17 @@ public class MainTele2 extends OpMode {
 
         //shooter data
         telemetry.addData("Shooter Power:", shooter.getPower());
+        telemetry.addData("max ticks:", ticksPerRev);
 
-        //shooter back
-        if (gamepad2.x) {
-            middle.setDirection(DcMotor.Direction.REVERSE);
-            middle.setPower(1);
-        } else if (gamepad2.b){
+        //middle
+        if (gamepad2.x || gamepad1.x) {
             middle.setDirection(DcMotor.Direction.FORWARD);
             middle.setPower(1);
+        } else if (gamepad2.b){
+            middle.setDirection(DcMotor.Direction.REVERSE);
+            middle.setPower(1);
+        } else {
+            middle.setPower(0);
         }
 
       /*
@@ -90,34 +94,32 @@ public class MainTele2 extends OpMode {
     }
 
     public void allshoot() throws InterruptedException {
-        if (gamepad2.a){
-            shooter.setPower(1);
-            sleep(2000);
-
-          //  middle.setDirection(DcMotor.Direction.FORWARD);
-            // middle.setPower(1); //need to adjust speed
+        if (gamepad2.aWasPressed()){
+            shooter.setDirection(DcMotor.Direction.FORWARD);
+            shooter.setPower(0.75);
             intake.setPower(1);
-        } else if (gamepad2.dpad_up){
-            shooter.setPower(shooter.getPower() + 0.05);
-        } else if (gamepad2.dpad_down) {
-            shooter.setPower(shooter.getPower() - 0.05);
-        } else {
-         //   middle.setPower(0);
+        } else if (gamepad2.yWasPressed()) {
             shooter.setPower(0);
             intake.setPower(0);
         }
 
+        if (gamepad2.dpadUpWasPressed()){
+            shooter.setPower(shooter.getPower() + 0.05);
+        } else if (gamepad2.dpadDownWasPressed()
+        ) {
+            shooter.setPower(shooter.getPower() - 0.05);
+
         telemetry.update();
+
+        }
 
     }
 
     public void allintake() {
-        if (gamepad2.right_bumper){
+        if (gamepad1.right_bumper || gamepad2.right_bumper){
             intake.setPower(1);
-            //middle.setPower(1);
         } else {
             intake.setPower(0);
-           // middle.setPower(0);
         }
 
     }
@@ -155,6 +157,7 @@ public class MainTele2 extends OpMode {
             } else {
                 leftFront.setPower(frontLeftPower * 0.8);
                 rightFront.setPower(frontRightPower * 0.8);
+
                 leftBack.setPower(backLeftPower * 0.8);
                 rightBack.setPower(backRightPower * 0.8);
                 telemetry.addLine("drive multiplier: 0.8");
