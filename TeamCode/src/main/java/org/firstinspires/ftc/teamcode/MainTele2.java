@@ -5,12 +5,8 @@ import static java.lang.Thread.sleep;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-
-import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 //add backroll to shooter
@@ -23,11 +19,11 @@ public class MainTele2 extends OpMode {
     private DcMotor intake;
     private DcMotorEx shooter;
     private double ticksPerRev;
-    // private Servo pusher;
+    private Servo pusher;
     private DcMotor middle;
 
 
-
+    @Override
     public void init() {
         //drivetrain init
         rightFront = hardwareMap.get(DcMotor.class, "rightFront");
@@ -36,27 +32,36 @@ public class MainTele2 extends OpMode {
         leftBack = hardwareMap.get(DcMotor.class, "leftBack");
 
         //shooter init
-        shooter = (DcMotorEx) hardwareMap.get(DcMotor.class, "shooter");
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         ticksPerRev = shooter.getMotorType().getTicksPerRev();
 
 
         intake = hardwareMap.get(DcMotor.class, "intake");
         middle = hardwareMap.get(DcMotor.class, "middle");
-       // pusher = hardwareMap.get(Servo.class, "pusher");
+        pusher = hardwareMap.get(Servo.class, "pusher");
+        pusher.setPosition(0.6);
+        // pusher.scaleRange(0.5, 1.0);
 
-      0.  leftFront.setDirection(DcMotor.Direction.FORWARD);
+        leftFront.setDirection(DcMotor.Direction.FORWARD);
         leftBack.setDirection(DcMotor.Direction.REVERSE);
 
         shooter.setDirection(DcMotor.Direction.FORWARD);
+
         middle.setDirection(DcMotor.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
     }
 
+    @Override
     public void loop() {
         drivetrain();
         allintake();
@@ -67,7 +72,11 @@ public class MainTele2 extends OpMode {
         }
 
         //shooter data
+        double rotations = shooter.getCurrentPosition() / ticksPerRev;
+        double targetV = 0; //need to update
         telemetry.addData("Shooter Power:", shooter.getPower());
+        telemetry.addData("Encoder:", shooter.getCurrentPosition());
+        telemetry.addData("Velocity:", shooter.getVelocity());
         telemetry.addData("max ticks:", ticksPerRev);
 
         //middle
@@ -81,14 +90,16 @@ public class MainTele2 extends OpMode {
             middle.setPower(0);
         }
 
-      /*
+
        //pusher
-        if (gamepad2.b) {
-            pusher.setPosition(1);
+        if (gamepad2.left_bumper) {
+            pusher.setPosition(0.35);
         } else {
-            pusher.setPosition(0);
+            pusher.setPosition(0.6);
         }
-        */
+
+
+        telemetry.addData("pusher pos:", pusher.getPosition());
 
         telemetry.update();
     }
@@ -96,7 +107,7 @@ public class MainTele2 extends OpMode {
     public void allshoot() throws InterruptedException {
         if (gamepad2.aWasPressed()){
             shooter.setDirection(DcMotor.Direction.FORWARD);
-            shooter.setPower(0.75);
+            shooter.setPower(0.75); // need to find target v
             intake.setPower(1);
         } else if (gamepad2.yWasPressed()) {
             shooter.setPower(0);
@@ -104,10 +115,9 @@ public class MainTele2 extends OpMode {
         }
 
         if (gamepad2.dpadUpWasPressed()){
-            shooter.setPower(shooter.getPower() + 0.05);
-        } else if (gamepad2.dpadDownWasPressed()
-        ) {
-            shooter.setPower(shooter.getPower() - 0.05);
+            shooter.setVelocity(shooter.getVelocity() + 50.0);
+        } else if (gamepad2.dpadDownWasPressed()) {
+            shooter.setVelocity(shooter.getVelocity() - 50.0);
 
         telemetry.update();
 
@@ -123,7 +133,6 @@ public class MainTele2 extends OpMode {
         }
 
     }
-
 
     public void drivetrain() {
         //Drivetrain
